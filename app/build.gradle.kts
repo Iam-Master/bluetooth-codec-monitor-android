@@ -9,7 +9,7 @@ android {
 
     defaultConfig {
         applicationId = "com.iammaster.codecmonitor"
-        minSdk = 26
+        minSdk = 31
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"

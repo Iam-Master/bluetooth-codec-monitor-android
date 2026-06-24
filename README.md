@@ -5,7 +5,7 @@ A native Android application designed to monitor your Bluetooth Audio Codecs in 
 It uses modern Jetpack Compose and native Kotlin flows to poll your Android Bluetooth Audio subsystem and accurately report which high-res codec (LDAC, aptX, AAC, SBC) your True Wireless Stereo (TWS) earbuds are actively using.
 
 ## Features
-- **Native Android 14+ UI:** Built beautifully with Jetpack Compose (Material 3).
+- **Native Android 12+ UI:** Built beautifully with Jetpack Compose (Material 3). Requires Android 12 (API 31) or newer.
 - **Real-Time Codec Monitoring:** See exactly which codec your headphones are using.
 - **Estimated Bitrate Dashboard:** Unlike Windows, Android doesn't natively expose the air transmission bitrate. This app intelligently estimates your streaming bitrate based on your active codec, negotiated sample rate, bit depth, and signal quality (RSSI).
 - **No Device Specific Code:** Built using generic Android `BluetoothA2dp` and `BluetoothCodecStatus` APIs, making it universally compatible with any Bluetooth audio device.
