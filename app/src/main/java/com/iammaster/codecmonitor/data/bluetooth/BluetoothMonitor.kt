@@ -42,7 +42,7 @@ class BluetoothMonitor(private val context: Context) : BluetoothProfile.ServiceL
         override fun onReceive(context: Context?, intent: Intent?) {
             if (intent?.action == "android.bluetooth.a2dp.profile.action.CODEC_CONFIG_CHANGED") {
                 val device = intent.getParcelableExtra<BluetoothDevice>(BluetoothDevice.EXTRA_DEVICE)
-                val codecStatusObj = intent.getParcelableExtra<Any>("android.bluetooth.extra.CODEC_STATUS")
+                val codecStatusObj = intent.getParcelableExtra<android.os.Parcelable>("android.bluetooth.extra.CODEC_STATUS")
                 if (device != null && codecStatusObj != null) {
                     _connectedDevice.value = device
                     parseCodecStatusObj(codecStatusObj)
