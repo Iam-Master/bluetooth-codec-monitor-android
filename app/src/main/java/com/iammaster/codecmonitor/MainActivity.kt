@@ -27,6 +27,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var viewModel: DashboardViewModel
     
     private var hasBluetoothPermission by mutableStateOf(false)
+    private var currentTheme by mutableStateOf(com.iammaster.codecmonitor.ui.theme.ThemeMode.SYSTEM)
 
     private val requestPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
@@ -45,18 +46,24 @@ class MainActivity : ComponentActivity() {
         checkAndRequestPermissions()
 
         setContent {
-            CodecMonitorTheme {
+            CodecMonitorTheme(themeMode = currentTheme) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
                     val codecStatus by viewModel.codecStatus.collectAsState()
-                    val connectedDevice by bluetoothMonitor.connectedDevice.collectAsState()
+                    val connectedDevice by viewModel.connectedDevice.collectAsState()
+                    val connectedDevicesList by viewModel.connectedDevicesList.collectAsState()
                     
                     DashboardScreen(
                         codecStatus = codecStatus, 
                         hasPermission = hasBluetoothPermission,
-                        deviceConnected = connectedDevice != null
+                        deviceConnected = connectedDevice != null,
+                        connectedDevices = connectedDevicesList,
+                        selectedDevice = connectedDevice,
+                        onDeviceSelected = { viewModel.selectDevice(it) },
+                        currentTheme = currentTheme,
+                        onThemeChanged = { currentTheme = it }
                     )
                 }
             }

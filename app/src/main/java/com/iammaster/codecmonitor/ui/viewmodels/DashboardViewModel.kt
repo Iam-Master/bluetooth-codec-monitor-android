@@ -16,6 +16,24 @@ class DashboardViewModel(private val bluetoothMonitor: BluetoothMonitor) : ViewM
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = null
         )
+        
+    val connectedDevicesList: StateFlow<List<android.bluetooth.BluetoothDevice>> = bluetoothMonitor.connectedDevicesList
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+        
+    val connectedDevice: StateFlow<android.bluetooth.BluetoothDevice?> = bluetoothMonitor.connectedDevice
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = null
+        )
+
+    fun selectDevice(device: android.bluetooth.BluetoothDevice) {
+        bluetoothMonitor.selectDevice(device)
+    }
 
     fun startMonitoring() {
         bluetoothMonitor.startMonitoring()

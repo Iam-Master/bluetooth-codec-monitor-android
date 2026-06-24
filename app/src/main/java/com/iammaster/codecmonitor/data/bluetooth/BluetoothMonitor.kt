@@ -31,6 +31,9 @@ class BluetoothMonitor(private val context: Context) : BluetoothProfile.ServiceL
     private val _connectedDevice = MutableStateFlow<BluetoothDevice?>(null)
     val connectedDevice: StateFlow<BluetoothDevice?> = _connectedDevice
 
+    private val _connectedDevicesList = MutableStateFlow<List<BluetoothDevice>>(emptyList())
+    val connectedDevicesList: StateFlow<List<BluetoothDevice>> = _connectedDevicesList
+
     private val bluetoothAdapter: BluetoothAdapter? by lazy {
         val manager = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
         manager.adapter
@@ -44,20 +47,34 @@ class BluetoothMonitor(private val context: Context) : BluetoothProfile.ServiceL
                 val device = intent.getParcelableExtra<BluetoothDevice>(BluetoothDevice.EXTRA_DEVICE)
                 val codecStatusObj = intent.getParcelableExtra<android.os.Parcelable>("android.bluetooth.extra.CODEC_STATUS")
                 if (device != null && codecStatusObj != null) {
-                    _connectedDevice.value = device
-                    parseCodecStatusObj(codecStatusObj)
+                    if (_connectedDevice.value == null || _connectedDevice.value == device) {
+                        _connectedDevice.value = device
+                        parseCodecStatusObj(codecStatusObj)
+                    }
                 }
             } else if (intent?.action == BluetoothA2dp.ACTION_CONNECTION_STATE_CHANGED) {
-                val state = intent.getIntExtra(BluetoothProfile.EXTRA_STATE, BluetoothProfile.STATE_DISCONNECTED)
-                if (state == BluetoothProfile.STATE_CONNECTED) {
-                    val device = intent.getParcelableExtra<BluetoothDevice>(BluetoothDevice.EXTRA_DEVICE)
-                    _connectedDevice.value = device
-                    requestCurrentCodecStatus(device)
-                } else if (state == BluetoothProfile.STATE_DISCONNECTED) {
-                    _connectedDevice.value = null
-                    _codecStatus.value = null
-                }
+                updateConnectedDevicesList()
             }
+        }
+    }
+
+    fun selectDevice(device: BluetoothDevice) {
+        _connectedDevice.value = device
+        requestCurrentCodecStatus(device)
+    }
+
+    private fun updateConnectedDevicesList() {
+        val devices = a2dpProxy?.connectedDevices ?: emptyList()
+        _connectedDevicesList.value = devices
+        
+        if (devices.isNotEmpty()) {
+            if (_connectedDevice.value == null || !devices.contains(_connectedDevice.value)) {
+                _connectedDevice.value = devices[0]
+                requestCurrentCodecStatus(devices[0])
+            }
+        } else {
+            _connectedDevice.value = null
+            _codecStatus.value = null
         }
     }
 
@@ -81,12 +98,7 @@ class BluetoothMonitor(private val context: Context) : BluetoothProfile.ServiceL
     override fun onServiceConnected(profile: Int, proxy: BluetoothProfile?) {
         if (profile == BluetoothProfile.A2DP) {
             a2dpProxy = proxy as BluetoothA2dp
-            val connectedDevices = a2dpProxy?.connectedDevices
-            if (!connectedDevices.isNullOrEmpty()) {
-                val device = connectedDevices[0]
-                _connectedDevice.value = device
-                requestCurrentCodecStatus(device)
-            }
+            updateConnectedDevicesList()
         }
     }
 

@@ -1,9 +1,14 @@
 package com.iammaster.codecmonitor.ui.screens
 
+import android.bluetooth.BluetoothDevice
+import android.annotation.SuppressLint
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -12,40 +17,131 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.iammaster.codecmonitor.data.bluetooth.CodecStatus
+import com.iammaster.codecmonitor.ui.components.BitrateGraph
+import com.iammaster.codecmonitor.ui.theme.ThemeMode
 
+@SuppressLint("MissingPermission")
 @Composable
-fun DashboardScreen(codecStatus: CodecStatus?, hasPermission: Boolean, deviceConnected: Boolean) {
+fun DashboardScreen(
+    codecStatus: CodecStatus?, 
+    hasPermission: Boolean, 
+    deviceConnected: Boolean,
+    connectedDevices: List<BluetoothDevice>,
+    selectedDevice: BluetoothDevice?,
+    onDeviceSelected: (BluetoothDevice) -> Unit,
+    currentTheme: ThemeMode,
+    onThemeChanged: (ThemeMode) -> Unit
+) {
     var showEstimationExplanation by remember { mutableStateOf(false) }
+    var deviceDropdownExpanded by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
             .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        // Top Bar: Theme Toggle & Device Selector
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                "Codec Monitor",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground
+            )
+
+            var themeMenuExpanded by remember { mutableStateOf(false) }
+            Box {
+                IconButton(onClick = { themeMenuExpanded = true }) {
+                    Icon(Icons.Default.Settings, contentDescription = "Theme Settings", tint = MaterialTheme.colorScheme.onBackground)
+                }
+                DropdownMenu(expanded = themeMenuExpanded, onDismissRequest = { themeMenuExpanded = false }) {
+                    DropdownMenuItem(text = { Text("System Default") }, onClick = { onThemeChanged(ThemeMode.SYSTEM); themeMenuExpanded = false })
+                    DropdownMenuItem(text = { Text("Light Mode") }, onClick = { onThemeChanged(ThemeMode.LIGHT); themeMenuExpanded = false })
+                    DropdownMenuItem(text = { Text("Dark Mode") }, onClick = { onThemeChanged(ThemeMode.DARK); themeMenuExpanded = false })
+                }
+            }
+        }
+        
+        Spacer(modifier = Modifier.height(16.dp))
+
+        if (hasPermission && connectedDevices.isNotEmpty()) {
+            Box {
+                OutlinedButton(onClick = { deviceDropdownExpanded = true }, modifier = Modifier.fillMaxWidth()) {
+                    Text(selectedDevice?.name ?: "Unknown Device", color = MaterialTheme.colorScheme.onBackground)
+                    Icon(Icons.Default.ArrowDropDown, contentDescription = null, tint = MaterialTheme.colorScheme.onBackground)
+                }
+                DropdownMenu(
+                    expanded = deviceDropdownExpanded,
+                    onDismissRequest = { deviceDropdownExpanded = false }
+                ) {
+                    connectedDevices.forEach { device ->
+                        DropdownMenuItem(
+                            text = { Text(device.name ?: device.address) },
+                            onClick = {
+                                onDeviceSelected(device)
+                                deviceDropdownExpanded = false
+                            }
+                        )
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+
         if (!hasPermission) {
+            Spacer(modifier = Modifier.weight(1f))
             Text(
                 "Bluetooth permission is required to monitor codecs.",
                 color = MaterialTheme.colorScheme.onBackground
             )
+            Spacer(modifier = Modifier.weight(1f))
             return
         }
 
         if (!deviceConnected) {
+            Spacer(modifier = Modifier.weight(1f))
             CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
             Spacer(modifier = Modifier.height(16.dp))
             Text(
-                "Detecting Bluetooth Device...",
+                "Waiting for Bluetooth connection...",
                 color = MaterialTheme.colorScheme.onBackground,
                 style = MaterialTheme.typography.titleMedium
             )
+            Spacer(modifier = Modifier.weight(1f))
             return
         }
 
         if (codecStatus != null) {
             CodecCard(codecStatus = codecStatus, onEstimationClick = { showEstimationExplanation = true })
+            Spacer(modifier = Modifier.height(24.dp))
+            
+            // Graph Section
+            Text(
+                "Real-Time Transmission (kbps)",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier.align(Alignment.Start)
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(MaterialTheme.colorScheme.surface)
+                    .padding(16.dp)
+            ) {
+                BitrateGraph(currentBitrate = codecStatus.estimatedBitrate)
+            }
         } else {
+            Spacer(modifier = Modifier.weight(1f))
             CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
             Spacer(modifier = Modifier.height(16.dp))
             Text(
@@ -53,6 +149,7 @@ fun DashboardScreen(codecStatus: CodecStatus?, hasPermission: Boolean, deviceCon
                 color = MaterialTheme.colorScheme.onBackground,
                 style = MaterialTheme.typography.titleMedium
             )
+            Spacer(modifier = Modifier.weight(1f))
         }
     }
 
@@ -82,7 +179,7 @@ fun CodecCard(codecStatus: CodecStatus, onEstimationClick: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Column(modifier = Modifier.padding(24.dp)) {
             Text(
