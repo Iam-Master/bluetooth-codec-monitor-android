@@ -14,3 +14,9 @@
 .cxx
 local.properties
 app/build/
+
+# Debug/verification artifacts captured at the repo root during manual on-device testing
+/*.png
+/*.jpg
+/*.jpeg
+/*.txt
