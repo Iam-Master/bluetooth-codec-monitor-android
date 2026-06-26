@@ -2,12 +2,12 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.iammaster.codecmonitor">
 
-    <uses-permission android:name="android.permission.BLUETOOTH" />
-    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+    <!-- BLUETOOTH_CONNECT is the only Bluetooth permission this app needs: it only reads
+         already-bonded devices, connection state, and codec info — it never scans for new
+         devices, so BLUETOOTH_SCAN (and the location permissions that come with it on pre-12
+         devices) are intentionally NOT requested. minSdk is 31 (Android 12+), so the legacy
+         BLUETOOTH/BLUETOOTH_ADMIN permissions are superseded and also omitted. -->
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
-    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
